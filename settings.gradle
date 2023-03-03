@@ -1,0 +1,4 @@
+rootProject.name = 'db-ddl-annotation'
+include 'annotation-processor'
+include 'test-module'
+
