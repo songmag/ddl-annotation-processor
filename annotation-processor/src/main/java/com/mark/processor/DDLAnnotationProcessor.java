@@ -12,8 +12,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
-import javax.persistence.Column;
-import javax.persistence.Transient;
+import javax.persistence.*;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -108,6 +107,7 @@ public class DDLAnnotationProcessor extends AbstractProcessor {
             // Get the Column annotation on the field
             String columnName = element.getSimpleName().toString();
             Transient fieldTransient = element.getAnnotation(Transient.class);
+
             if (fieldTransient != null) {
                 return;
             }
@@ -116,6 +116,9 @@ public class DDLAnnotationProcessor extends AbstractProcessor {
             boolean nullable = true;
             boolean unique = false;
             if (columnAnnotation != null) {
+                if (!columnAnnotation.insertable()) {
+                    return;
+                }
                 if (!columnAnnotation.name().isBlank()) {
                     columnName = columnAnnotation.name();
                 }
@@ -132,10 +135,39 @@ public class DDLAnnotationProcessor extends AbstractProcessor {
             String type = Type.getDBType(element);
             if (type == null) {
                 Queue<Element> fields = new LinkedList<>();
-                Element subElement = ((DeclaredType) element.asType()).asElement();
-                fields.addAll(subElement.getEnclosedElements()
-                        .stream()
-                        .filter(i -> i.getKind().isField()).collect(Collectors.toList()));
+
+                Embedded embeddedAnnotation = element.getAnnotation(Embedded.class);
+
+                if (embeddedAnnotation != null) {
+                    Element subElement = ((DeclaredType) element.asType()).asElement();
+                    fields.addAll(subElement.getEnclosedElements()
+                            .stream()
+                            .filter(i -> i.getKind().isField())
+                            .collect(Collectors.toList()));
+                }
+
+                ManyToOne manyToOneAnnotation = element.getAnnotation(ManyToOne.class);
+
+                if (manyToOneAnnotation == null && fields.isEmpty()) {
+                    return;
+                }
+                if (manyToOneAnnotation != null) {
+                    JoinColumn joinColumnAnnotation = element.getAnnotation(JoinColumn.class);
+                    if (joinColumnAnnotation == null) {
+                        Element subElement = ((DeclaredType) element.asType()).asElement();
+                        fields.addAll(subElement.getEnclosedElements()
+                                .stream()
+                                .filter(i -> {
+                                    Id idAnnotation = i.getAnnotation(Id.class);
+                                    return idAnnotation != null;
+                                })
+                                .collect(Collectors.toList())
+                        );
+                    } else {
+                        //id annotation override
+                    }
+                }
+
                 while (!fields.isEmpty()) {
                     generateFields(fields.poll(), sb);
                 }

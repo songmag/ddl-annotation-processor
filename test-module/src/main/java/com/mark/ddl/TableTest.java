@@ -3,7 +3,7 @@ package com.mark.ddl;
 import com.mark.annotation.Comment;
 import com.mark.annotation.DDL;
 
-import javax.persistence.Column;
+import javax.persistence.*;
 import java.math.BigDecimal;
 
 @DDL
@@ -25,20 +25,25 @@ public class TableTest {
     private Long longValue;
     private Integer integerValue;
     private tt enums;
+    @Embedded
     private TestClass testClass;
 
     enum tt {
 
     }
 
+    @Embeddable
     class TestClass {
         int p;
         long t;
+        @ManyToOne
         KO clazz;
     }
 
-    class KO{
+    @Entity
+    class KO {
+        @Id
         int co;
         int koo;
-    };
+    }
 }
