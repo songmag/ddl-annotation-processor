@@ -9,25 +9,52 @@ import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
 import javax.persistence.Column;
+import javax.persistence.Transient;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @SupportedAnnotationTypes("com.mark.annotation")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 public class DDLAnnotationProcessor extends AbstractProcessor {
 
     private enum Type {
-        Integer("int", " int "),
+        Int("int", "int"),
+        Integer("java.lang.Integer", "int"),
+        LongWrapper("java.lang.Long", "bigint"),
         Long("long", "bigint"),
-        BigDecimal("java.Math.BigDecimal", "decimal(16,2)"),
-        String("java.lang.String", "varchar(255)"),
-        Enum("enum", "varchar");
+        BigDecimal("java.math.BigDecimal", "decimal(16,2)"),
+        String("java.lang.String", "varchar(255)");
 
         String javaType;
         String dbType;
 
+        public static String getDBType(Element element) {
+            for (Type t : values()) {
+                if (element.asType().toString().equals(t.javaType)) {
+                    return t.dbType;
+                }
+            }
+
+            if (isEnum(element)) {
+                return "varchar(255)";
+            }
+
+            return null;
+        }
+
+        private static boolean isEnum(Element element) {
+            return ((DeclaredType) (element.asType())).asElement().getKind() == ElementKind.ENUM;
+        }
 
         Type(String javaType, String dbType) {
             this.javaType = javaType;
@@ -42,7 +69,7 @@ public class DDLAnnotationProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        System.out.println("EEEEE");
+        StringBuilder sb = new StringBuilder();
         for (Element element : roundEnv.getElementsAnnotatedWith(DDL.class)) {
             DDL tableValue = element.getAnnotation(DDL.class);
             String tableName;
@@ -51,38 +78,85 @@ public class DDLAnnotationProcessor extends AbstractProcessor {
             } else {
                 tableName = tableValue.value();
             }
-
             TypeElement typeElement = (TypeElement) element;
-            StringBuilder sb = new StringBuilder();
             sb.append("create table ")
                     .append(tableName)
-                    .append("(");
-            for (Element fieldElement : typeElement.getEnclosedElements()) {
-                if (fieldElement.getKind().isField()) {
-                    // Get the Column annotation on the field
-                    Comment commentAnnotation = fieldElement.getAnnotation(Comment.class);
-                    Column columnAnnotation = fieldElement.getAnnotation(Column.class);
-                    if (columnAnnotation == null) {
-                        continue;
-                    }
+                    .append("(\n\t");
 
-                    if (fieldElement.getKind().isField()) {
-                        VariableElement variableElement = (VariableElement) fieldElement;
-                        variableElement.asType();
-                    }
-                    // Add the column definition to the SQL script
-//                    sb.append(columnAnnotation.name()).append(" ")
-//                            .append(columnAnnotation.type()).append("(").append(columnAnnotation.length()).append(") ")
-//                            .append(columnAnnotation.nullable() ? "NULL" : "NOT NULL").append(" ")
-//                            .append(columnAnnotation.comment()).append(",\n");
+            for (Element fieldElement : typeElement.getEnclosedElements()) {
+                generateFields(fieldElement, sb);
+            }
+            sb.replace(sb.length() - 3, sb.length(), "");
+            sb.append("\n)\n");
+        }
+        if (sb.length() > 0) {
+            try {
+                File file = new File("./project-ddl-query.sql");
+                file.createNewFile();
+                OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file));
+                writer.write(sb.toString());
+                writer.flush();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return true;
+    }
+
+    private void generateFields(Element element, StringBuilder sb) {
+        if (element.getKind().isField()) {
+            // Get the Column annotation on the field
+            String columnName = element.getSimpleName().toString();
+            Transient fieldTransient = element.getAnnotation(Transient.class);
+            if (fieldTransient != null) {
+                return;
+            }
+
+            Column columnAnnotation = element.getAnnotation(Column.class);
+            boolean nullable = true;
+            boolean unique = false;
+            if (columnAnnotation != null) {
+                if (!columnAnnotation.name().isBlank()) {
+                    columnName = columnAnnotation.name();
+                }
+                nullable = columnAnnotation.nullable();
+                unique = columnAnnotation.unique();
+                if (!columnAnnotation.columnDefinition().isBlank()) {
+                    sb.append(columnName).append(" ");
+                    sb.append(columnAnnotation.columnDefinition());
+                    return;
                 }
             }
-            sb.append(")");
 
-            System.out.println(sb);
+            Comment commentAnnotation = element.getAnnotation(Comment.class);
+            String type = Type.getDBType(element);
+            if (type == null) {
+                Queue<Element> fields = new LinkedList<>();
+                Element subElement = ((DeclaredType) element.asType()).asElement();
+                fields.addAll(subElement.getEnclosedElements()
+                        .stream()
+                        .filter(i -> i.getKind().isField()).collect(Collectors.toList()));
+                while (!fields.isEmpty()) {
+                    generateFields(fields.poll(), sb);
+                }
+                return;
+            }
+
+            sb.append(columnName)
+                    .append(" ")
+                    .append(type)
+                    .append(" ")
+                    .append(nullable ? "NULL" : "NOT NULL")
+                    .append(" ")
+                    .append(unique ? "unique" : "");
+
+            if (commentAnnotation != null && !commentAnnotation.value().isBlank()) {
+                sb
+                        .append(" comment '")
+                        .append(commentAnnotation.value())
+                        .append("'");
+            }
+            sb.append(",\n\t");
         }
-
-        System.out.println("EEEEE");
-        return true;
     }
 }

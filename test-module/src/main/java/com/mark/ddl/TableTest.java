@@ -17,15 +17,28 @@ public class TableTest {
     @Comment(value = "testPP")
     private String test;
 
+    @Comment(value = "value test")
     private long value1;
+    @Comment(value = "value-test-comment")
     private int value2;
     private BigDecimal decimal;
     private Long longValue;
     private Integer integerValue;
     private tt enums;
+    private TestClass testClass;
 
     enum tt {
 
     }
 
+    class TestClass {
+        int p;
+        long t;
+        KO clazz;
+    }
+
+    class KO{
+        int co;
+        int koo;
+    };
 }
