@@ -1,15 +1,23 @@
 package com.mark.ddl;
 
 import com.mark.annotation.Comment;
-import com.mark.annotation.DDL;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Embeddable;
+import javax.persistence.Embedded;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import java.math.BigDecimal;
+import java.util.Currency;
 
-@DDL
+@Entity
 public class TableTest {
 
-    @Column(name = "test column name")
+    @Id
+    private int value;
+
+    @Column(name = "table_name", unique = true)
     @Comment(value = "test comment")
     private String testValue;
 
@@ -34,10 +42,17 @@ public class TableTest {
 
     @Embeddable
     class TestClass {
-        int p;
-        long t;
-        @ManyToOne
-        KO clazz;
+
+        @Embedded
+        Money a;
+        @Embedded
+        Money b;
+    }
+
+    @Embeddable
+    class Money {
+        BigDecimal amount;
+        Currency currency;
     }
 
     @Entity

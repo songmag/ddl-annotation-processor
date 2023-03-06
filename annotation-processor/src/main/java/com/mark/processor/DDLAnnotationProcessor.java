@@ -1,7 +1,6 @@
 package com.mark.processor;
 
 import com.mark.annotation.Comment;
-import com.mark.annotation.DDL;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
@@ -12,7 +11,15 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.DiscriminatorValue;
+import javax.persistence.Embedded;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
+import javax.persistence.Table;
+import javax.persistence.Transient;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -63,19 +70,25 @@ public class DDLAnnotationProcessor extends AbstractProcessor {
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        return Set.of(DDL.class.getCanonicalName());
+        return Set.of(Entity.class.getCanonicalName());
     }
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         StringBuilder sb = new StringBuilder();
-        for (Element element : roundEnv.getElementsAnnotatedWith(DDL.class)) {
-            DDL tableValue = element.getAnnotation(DDL.class);
+        for (Element element : roundEnv.getElementsAnnotatedWith(Entity.class)) {
+            DiscriminatorValue discriminatorValue = element.getAnnotation(DiscriminatorValue.class);
+            if (discriminatorValue != null) {
+                continue;
+            }
+            Table tableValue = element.getAnnotation(Table.class);
             String tableName;
-            if (tableValue.value().isBlank()) {
+            if (tableValue == null) {
+                tableName = element.getSimpleName().toString();
+            } else if (tableValue.name().isBlank()) {
                 tableName = element.getSimpleName().toString();
             } else {
-                tableName = tableValue.value();
+                tableName = tableValue.name();
             }
             TypeElement typeElement = (TypeElement) element;
             sb.append("create table ")
@@ -86,7 +99,7 @@ public class DDLAnnotationProcessor extends AbstractProcessor {
                 generateFields(fieldElement, sb);
             }
             sb.replace(sb.length() - 3, sb.length(), "");
-            sb.append("\n)\n");
+            sb.append("\n);\n");
         }
         if (sb.length() > 0) {
             try {
@@ -126,7 +139,7 @@ public class DDLAnnotationProcessor extends AbstractProcessor {
                 unique = columnAnnotation.unique();
                 if (!columnAnnotation.columnDefinition().isBlank()) {
                     sb.append(columnName).append(" ");
-                    sb.append(columnAnnotation.columnDefinition());
+                    sb.append(columnAnnotation.columnDefinition()).append(",\n\t");
                     return;
                 }
             }
