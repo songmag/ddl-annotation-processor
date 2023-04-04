@@ -2,14 +2,10 @@ package com.mark.ddl;
 
 import com.mark.annotation.Comment;
 
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.Embedded;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.ManyToOne;
+import javax.persistence.*;
 import java.math.BigDecimal;
-import java.util.Currency;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Entity
 public class TableTest {
@@ -32,20 +28,36 @@ public class TableTest {
     private BigDecimal decimal;
     private Long longValue;
     private Integer integerValue;
+    private LocalDateTime time1;
+    private LocalDate date;
     private tt enums;
-    @Embedded
-    private TestClass testClass;
 
     enum tt {
 
+    }
+
+    enum Currency {
+        KRW,
+        JPY,
+        USD;
     }
 
     @Embeddable
     class TestClass {
 
         @Embedded
+        @AttributeOverrides(
+                {
+                        @AttributeOverride(name = "amount", column = @Column(name = "multi"))
+                }
+        )
         Money a;
         @Embedded
+        @AttributeOverrides(
+                {
+                        @AttributeOverride(name = "amount", column = @Column(name = "multi-B"))
+                }
+        )
         Money b;
     }
 
