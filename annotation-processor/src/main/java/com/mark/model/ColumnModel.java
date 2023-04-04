@@ -1,6 +1,7 @@
 package com.mark.model;
 
 
+import com.mark.CamelToSnakeUtil;
 import com.mark.annotation.Comment;
 
 import javax.lang.model.element.Element;
@@ -110,8 +111,12 @@ public abstract class ColumnModel {
         if (!model.insertable) {
             return;
         }
+        String sqlColumnName = model.columnName;
+        if(CamelToSnakeUtil.checkCamelCase(model.columnName)){
+            sqlColumnName = CamelToSnakeUtil.changeCamelCaseToSnakeCase(model.columnName);
+        }
         builder.append("\t`")
-                .append(model.columnName)
+                .append(sqlColumnName)
                 .append("` ");
 
         if (model.columnDefined != null && !model.columnDefined.isBlank()) {
