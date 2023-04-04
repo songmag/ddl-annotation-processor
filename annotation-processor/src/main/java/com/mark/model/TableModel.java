@@ -1,5 +1,7 @@
 package com.mark.model;
 
+import com.mark.CamelToSnakeUtil;
+
 import javax.persistence.Column;
 import javax.persistence.InheritanceType;
 import java.util.*;
@@ -78,8 +80,13 @@ public class TableModel {
         if (this.inheritanceType == InheritanceType.TABLE_PER_CLASS) {
             return;
         }
+
+        String sqlTableName = tableName;
+        if(CamelToSnakeUtil.checkCamelCase(tableName)){
+            sqlTableName = CamelToSnakeUtil.changeCamelCaseToSnakeCase(tableName);
+        }
         builder.append("create table ")
-                .append(tableName)
+                .append(sqlTableName)
                 .append("(\n");
 
         columns.values().forEach(column -> column.makeColumn(builder));
