@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -88,11 +89,13 @@ public class DDLAnnotationProcessor extends AbstractProcessor {
 
             File file = new File("./project-ddl-query.sql");
             if(file.exists()){
-                LocalDateTime dateTime = LocalDateTime.from(new Date(file.lastModified()).toInstant());
+                LocalDateTime dateTime = LocalDateTime.from(new Date(file.lastModified()).toInstant().atZone(ZoneId.systemDefault()));
+
                 if(dateTime.isBefore(LocalDateTime.now().minusDays(1))) {
                     file.delete();
                     file.createNewFile();
                 }
+
                 file.setWritable(true);
             } else {
                 file.createNewFile();
