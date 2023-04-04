@@ -145,6 +145,10 @@ public abstract class ColumnModel {
         builder.append("\n");
     }
 
+    public boolean isInsertable() {
+        return insertable;
+    }
+
     public String getColumnName() {
         return columnName;
     }

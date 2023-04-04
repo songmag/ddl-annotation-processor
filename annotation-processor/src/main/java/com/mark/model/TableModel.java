@@ -27,11 +27,11 @@ public class TableModel {
         this.comment = comment;
     }
 
-    public ColumnModel getIdColumn(){
+    public ColumnModel getIdColumn() {
         return idColumn;
     }
 
-    public Set<ColumnModel> columns(){
+    public Set<ColumnModel> columns() {
         return new HashSet<>(this.columns.values());
     }
 
@@ -49,6 +49,9 @@ public class TableModel {
 
     public void addColumn(ColumnModel column) {
         if (this.columns.containsKey(column)) {
+            if (column.isInsertable()) {
+                this.columns.put(column.getColumnName(), column);
+            }
             return;
         }
         if (column.isId()) {
