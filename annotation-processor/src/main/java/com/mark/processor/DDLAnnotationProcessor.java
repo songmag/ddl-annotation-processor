@@ -15,6 +15,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -85,7 +87,16 @@ public class DDLAnnotationProcessor extends AbstractProcessor {
             }
 
             File file = new File("./project-ddl-query.sql");
-            file.createNewFile();
+            if(file.exists()){
+                LocalDateTime dateTime = LocalDateTime.from(new Date(file.lastModified()).toInstant());
+                if(dateTime.isBefore(LocalDateTime.now().minusDays(1))) {
+                    file.delete();
+                    file.createNewFile();
+                }
+                file.setWritable(true);
+            } else {
+                file.createNewFile();
+            }
             try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file))) {
                 for (TableModel model : MODELS.values()) {
                     StringBuilder builder = new StringBuilder();
