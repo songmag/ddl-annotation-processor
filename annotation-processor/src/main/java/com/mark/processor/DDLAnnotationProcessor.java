@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 public class DDLAnnotationProcessor extends AbstractProcessor {
 
-    public static final Map<String, TableModel> MODELS = new HashMap<>();
+    public static Map<String, TableModel> MODELS;
     public static Queue<ElementItem> ENTITIES_ELEMENTS;
     private CreateTable createTable;
     private class ElementItem {
@@ -71,6 +71,7 @@ public class DDLAnnotationProcessor extends AbstractProcessor {
             Set<? extends Element> entityElements = roundEnv.getElementsAnnotatedWith(Entity.class);
 
             ENTITIES_ELEMENTS = new LinkedList<>(entityElements.stream().map(ElementItem::new).collect(Collectors.toList()));
+            MODELS = new HashMap<>();
             while (!ENTITIES_ELEMENTS.isEmpty()) {
                 ElementItem item = ENTITIES_ELEMENTS.poll();
                 TableModel model = createTable.create(item.element);
@@ -100,7 +101,7 @@ public class DDLAnnotationProcessor extends AbstractProcessor {
             } else {
                 file.createNewFile();
             }
-            try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file))) {
+            try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(file,true))) {
                 for (TableModel model : MODELS.values()) {
                     StringBuilder builder = new StringBuilder();
                     model.tableToQuery(builder);
