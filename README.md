@@ -3,7 +3,7 @@
 Intro
 ---
 
-This Annotation Proccesor can create a query for mysql database table in the form of a file.
+This Annocation proccesor can create a query - in a form of a file- which generates mysql database table.
 
 The file will be created at the root path in the project that you ran.
 
