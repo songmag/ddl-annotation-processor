@@ -1,7 +1,23 @@
 # ddl-annotation-processor
-ddl annotation 을 작성하면, create table query 를 작성한다.
 
-## 순서도
+Intro
+---
+
+This Annotation Proccesor can create a query for mysql database table in the form of a file.
+
+The file will be created at the root path in the project that you ran.
+
+Support Annotation
+--- 
+
+- Entity 
+- Column
+- Embedded
+- AttributeOverride
+- Inheritance
+- Comment
+
+## Flow Chart
 
 Table Model
 
