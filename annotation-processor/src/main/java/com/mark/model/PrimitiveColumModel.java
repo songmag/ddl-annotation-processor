@@ -1,5 +1,7 @@
 package com.mark.model;
 
+import com.mark.ElementUtil;
+
 import javax.lang.model.element.Element;
 
 public class PrimitiveColumModel extends ColumnModel {
@@ -10,7 +12,7 @@ public class PrimitiveColumModel extends ColumnModel {
     @Override
     protected String setType(Element element) {
         for (DBType t : DBType.values()) {
-            if (element.asType().toString().equals(t.javaType)) {
+            if (ElementUtil.getInstance().getTypes(element).toString().equals(t.javaType)) {
                 return t.dbType;
             }
         }

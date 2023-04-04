@@ -45,6 +45,10 @@ public class ElementUtil {
     }
 
 
+    public Element getTypes(Element element) {
+        return this.types.asElement(element.asType());
+    }
+
     public List<Element> getAllElements(Element element) {
         Map<String, Element> elements = new HashMap<String, Element>();
         Element superElement = getSuperClassElement(element);
